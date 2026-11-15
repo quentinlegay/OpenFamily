@@ -7,10 +7,10 @@ import { attachWebSocketServer } from './lib/wsServer';
 import { startReminderScheduler } from './lib/reminderScheduler';
 import { startCalendarSubscriptionScheduler } from './lib/calendarSources';
 import { getAuthConfig } from './config/authConfig';
+import { resolveServerPort } from './config/port';
 
 export { broadcast };
 
-const PORT = process.env.SERVER_PORT || 3001;
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -21,6 +21,7 @@ attachWebSocketServer(server);
 // Start server
 const startServer = async () => {
     try {
+        const PORT = resolveServerPort();
         await runMigrations();
         // Test database connection
         await pool.query('SELECT NOW()');
@@ -32,9 +33,18 @@ const startServer = async () => {
         startReminderScheduler();
         startCalendarSubscriptionScheduler();
 
+        server.once('error', (error: NodeJS.ErrnoException) => {
+            logger.error('server.listen_failed', {
+                port: PORT,
+                error: error.code === 'EADDRINUSE'
+                    ? `Port ${PORT} is already in use: choose another SERVER_PORT.`
+                    : error.message,
+            });
+            process.exit(1);
+        });
         server.listen(PORT, () => {
             logger.info('server.started', {
-                port: Number(PORT),
+                port: PORT,
                 httpUrl: `http://localhost:${PORT}`,
                 wsUrl: `ws://localhost:${PORT}/ws`,
             });

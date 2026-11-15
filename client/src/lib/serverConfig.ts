@@ -68,15 +68,11 @@ export function isServerConfigured(): boolean {
 
 // ─── API / WebSocket base resolution ─────────────────────────────────────────
 
-const rawApiUrl = import.meta.env.VITE_API_URL as string | undefined;
-const WEB_API_BASE = rawApiUrl !== undefined
-    ? rawApiUrl
-    : (import.meta.env.PROD ? '' : 'http://localhost:3001');
-
-const rawWsUrl = import.meta.env.VITE_WS_URL as string | undefined;
-const WEB_WS_BASE = rawWsUrl !== undefined
-    ? rawWsUrl
-    : (import.meta.env.PROD ? '' : 'ws://localhost:3001');
+// Empty = same origin, in production (nginx forwards /api and /ws) as in
+// development (the Vite dev server forwards them to SERVER_PORT), so no port
+// is written here.
+const WEB_API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
+const WEB_WS_BASE = (import.meta.env.VITE_WS_URL as string | undefined) ?? '';
 
 /** Base URL for HTTP API calls. Native → configured server; web → same-origin. */
 export function apiBase(): string {

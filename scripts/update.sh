@@ -113,6 +113,25 @@ step "Récupération de la nouvelle version"
 # Sauvegarde du .env (git pull ne doit pas l'écraser, mais par précaution)
 cp "$INSTALL_DIR/.env" "/tmp/openfamily_env_${DATE_TAG}.bak" 2>/dev/null || true
 
+# Anciennes installations : les ports personnalisés étaient écrits directement
+# dans docker-compose.yml, ce qui bloquait git pull. Ils passent dans .env
+# (APP_PORT / API_PORT) et le fichier compose redevient celui du dépôt.
+# Seulement si les lignes de ports sont les seules modifications locales.
+COMPOSE_OTHER_CHANGES=$(git diff -U0 -- docker-compose.yml 2>/dev/null | grep -E '^[-+][^-+]' | grep -vE ':(80|3001)"\s*$' || true)
+if ! git diff --quiet -- docker-compose.yml 2>/dev/null && [[ -z "$COMPOSE_OTHER_CHANGES" ]] \
+   && ! grep -q '^APP_PORT=' "$INSTALL_DIR/.env" 2>/dev/null; then
+  OLD_APP_PORT=$(grep -oP '^\s*- "\K[0-9.:]+(?=:80")' docker-compose.yml | head -1 || true)
+  OLD_API_PORT=$(grep -oP '^\s*- "\K[0-9.:]+(?=:3001")' docker-compose.yml | head -1 || true)
+  {
+    echo ""
+    echo "# Ports publiés sur l'hôte (repris de l'ancien docker-compose.yml)"
+    echo "APP_PORT=${OLD_APP_PORT:-3000}"
+    echo "API_PORT=${OLD_API_PORT:-3001}"
+  } >> "$INSTALL_DIR/.env"
+  git checkout -- docker-compose.yml
+  log "Ports déplacés dans .env : APP_PORT=${OLD_APP_PORT:-3000}, API_PORT=${OLD_API_PORT:-3001}"
+fi
+
 git pull origin "$CURRENT_BRANCH" --quiet
 NEW_COMMIT=$(git rev-parse --short HEAD)
 log "Code mis à jour : $CURRENT_COMMIT → $NEW_COMMIT"
@@ -143,7 +162,8 @@ log "Services redémarrés"
 step "Vérification de la santé des services"
 
 info "Attente que les services soient prêts..."
-API_PORT=$(grep -oP 'SERVER_PORT=\K\d+' "$INSTALL_DIR/.env" 2>/dev/null || echo "3001")
+API_PORT=$(grep -oP '^API_PORT=\K\d+' "$INSTALL_DIR/.env" 2>/dev/null || true)
+API_PORT=${API_PORT:-3001}
 
 for i in {1..24}; do
   STATUS=$(curl -s -o /dev/null -w "%{http_code}" \

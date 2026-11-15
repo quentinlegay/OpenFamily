@@ -289,6 +289,10 @@ JWT_SECRET=${JWT_SECRET}
 NODE_ENV=production
 SERVER_PORT=3001
 
+# --- Ports publiés sur l'hôte ---
+APP_PORT=${PORT_FRONT}
+API_PORT=${PORT_API}
+
 # --- Notifications push VAPID ---
 VAPID_PUBLIC_KEY=${VAPID_PUBLIC}
 VAPID_PRIVATE_KEY=${VAPID_PRIVATE}
@@ -303,16 +307,6 @@ echo 'Fichier .env créé'
 "
 
 log "Fichier .env configuré"
-
-# ─── Adaptation des ports si nécessaire ──────────────────────────────────────
-if [[ "$PORT_FRONT" != "3000" || "$PORT_API" != "3001" ]]; then
-  step "Adaptation des ports personnalisés"
-  pct exec "$CT_ID" -- bash -c "
-    sed -i 's/- \"3000:80\"/- \"${PORT_FRONT}:80\"/' '${INSTALL_DIR}/docker-compose.yml'
-    sed -i 's/- \"3001:3001\"/- \"${PORT_API}:3001\"/' '${INSTALL_DIR}/docker-compose.yml'
-  "
-  log "Ports adaptés : frontend=$PORT_FRONT, api=$PORT_API"
-fi
 
 # ─── Script de mise à jour ────────────────────────────────────────────────────
 step "Installation du script de mise à jour"

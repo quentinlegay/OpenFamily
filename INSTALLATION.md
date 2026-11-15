@@ -104,6 +104,15 @@ curl -s http://localhost:3000/health     # {"status":"ok",...}
 
 OpenFamily is at `http://<server-address>:3000`. Only port **3000** is needed: it serves the app and forwards the API and live updates to the server. The Android app also connects to this address.
 
+**Use another port.** Set it in `.env`, then run `docker compose up -d` (no rebuild needed):
+
+```bash
+APP_PORT=8080            # the app, now at http://<server-address>:8080
+API_PORT=8081            # the API published for local tools (optional)
+```
+
+`APP_PORT=127.0.0.1:8080` listens on the machine only, for a reverse proxy on the same host. Do not change `SERVER_PORT` for Docker: it is the port inside the containers and is only used when running without Docker.
+
 > **Do not expose the other ports to the internet.** The compose file also publishes the API (3001) and PostgreSQL (`POSTGRES_PORT`) for local tools. On a server reachable from the internet, allow only 3000 (or 80/443 through your proxy) in the firewall, or keep them on the machine itself by adding to `docker-compose.override.yml` (Docker Compose 2.24 or later):
 >
 > ```yaml
@@ -112,7 +121,7 @@ OpenFamily is at `http://<server-address>:3000`. Only port **3000** is needed: i
 >       - "127.0.0.1:5432:5432"
 > ```
 >
-> and the same with `127.0.0.1:3001:3001` under `server:`.
+> or, more simply, set `API_PORT=127.0.0.1:3001` in `.env`.
 
 ## 5. Create your family
 
@@ -246,7 +255,7 @@ It creates a Debian container with Docker, generates the secrets and starts Open
 |---|---|
 | The server restarts in a loop, logs mention `JWT_SECRET` | Missing, too short or left as the example: set a 32+ character random value. |
 | `password authentication failed for user "openfamily"` | The database volume was created with another `POSTGRES_PASSWORD`. Put the old password back, or, on a new install only, delete the volume with `docker compose down -v` (this erases the data). |
-| `port is already allocated` | Another program uses 3000, 3001 or the PostgreSQL port. Change `POSTGRES_PORT` in `.env`, or map another port for the app (for example `"8080:80"` for `client`). |
+| `port is already allocated` | Another program uses 3000, 3001 or the PostgreSQL port. Change `APP_PORT`, `API_PORT` or `POSTGRES_PORT` in `.env`, then `docker compose up -d`. |
 | Reminders arrive one or two hours late | `TZ` is missing: set it in `.env` and run `docker compose up -d`. |
 | "Sign up" is missing or refused | `REGISTRATION_ENABLED=false`: invite the person from **Family** instead, or set it to `true`. |
 | No "Continue with ..." button on the sign-in page | SSO is off: the server log's `auth.oidc_disabled` line says which variable is missing (often `APP_PUBLIC_URL`). |

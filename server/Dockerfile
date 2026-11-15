@@ -57,4 +57,8 @@ RUN mkdir -p /app/uploads
 
 EXPOSE 3001
 
+# Follows SERVER_PORT, so a container run on another port is still checked.
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=5 \
+    CMD wget -qO- "http://localhost:${SERVER_PORT:-3001}/health" >/dev/null 2>&1 || exit 1
+
 CMD ["node", "server/dist/index.js"]

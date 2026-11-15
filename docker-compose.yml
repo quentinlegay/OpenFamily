@@ -34,6 +34,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-openfamily}
       POSTGRES_USER: ${POSTGRES_USER:-openfamily}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      # Port INSIDE the container network, where nginx (client) reaches the API.
+      # Leave it: to change the port you open in the browser, set APP_PORT
+      # (and API_PORT for the API) in .env instead.
       SERVER_PORT: 3001
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET}
@@ -76,7 +79,9 @@ services:
       # Assistant or Ollama are on your own network.
       INTEGRATIONS_BLOCK_PRIVATE_IPS: ${INTEGRATIONS_BLOCK_PRIVATE_IPS:-false}
     ports:
-      - "3001:3001"
+      # Host port of the API (rarely needed: the app on APP_PORT already
+      # forwards /api and /ws). Set API_PORT in .env to change it.
+      - "${API_PORT:-3001}:3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,7 +109,10 @@ services:
     container_name: openfamily-client
     restart: unless-stopped
     ports:
-      - "3000:80"
+      # The port you open in the browser and give to the Android app.
+      # Set APP_PORT in .env to change it (e.g. APP_PORT=8080), or
+      # APP_PORT=127.0.0.1:8080 to listen on this machine only.
+      - "${APP_PORT:-3000}:80"
     depends_on:
       server:
         condition: service_healthy

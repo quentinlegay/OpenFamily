@@ -1,5 +1,5 @@
 // The API base URL is resolved at request time by `apiBase()`:
-//  - web: same-origin in prod ('' ), localhost:3001 in dev (see serverConfig);
+//  - web: same-origin ('' ): nginx in prod, the Vite proxy in dev (see serverConfig);
 //  - native (Capacitor): the server URL the user configured on the device.
 import { mockRequest } from '../demo/mockApi';
 import { apiBase } from './serverConfig';

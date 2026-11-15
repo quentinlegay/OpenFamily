@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
@@ -14,6 +14,9 @@ export default defineConfig(({ mode }) => {
     const isDemo = process.env.VITE_DEMO === 'true';
     const isNativeBuild = mode === 'native';
     const usePwa = !isDemo && !isNativeBuild;
+    // The dev proxy follows the API port set in the root .env (SERVER_PORT).
+    const rootEnv = loadEnv(mode, path.resolve(__dirname, '..'), '');
+    const apiPort = process.env.SERVER_PORT || rootEnv.SERVER_PORT || '3001';
 
     return {
         base: isDemo ? (process.env.VITE_DEMO_BASE || '/OpenFamily/demo/') : '/',
@@ -49,8 +52,13 @@ export default defineConfig(({ mode }) => {
             port: 5173,
             proxy: {
                 '/api': {
-                    target: process.env.VITE_API_URL || 'http://localhost:3001',
+                    target: process.env.VITE_API_URL || `http://localhost:${apiPort}`,
                     changeOrigin: true,
+                },
+                '/health': `http://localhost:${apiPort}`,
+                '/ws': {
+                    target: `ws://localhost:${apiPort}`,
+                    ws: true,
                 },
             },
         },
