@@ -3,7 +3,9 @@ import { getJwtSecret } from '../config/loadEnv';
 import { query, Transaction } from '../db';
 import { clients, WS_SESSION_REVOKED } from './broadcaster';
 import logger from './logger';
-import { ApiTokenScope, hashApiToken, isApiToken, touchApiToken } from './apiTokens';
+import {
+    API_TOKEN_LENGTH, ApiTokenScope, apiTokenPrefix, hashApiToken, isApiToken, touchApiToken,
+} from './apiTokens';
 
 export { WS_SESSION_REVOKED };
 
@@ -75,6 +77,12 @@ const verifyApiToken = async (token: string): Promise<VerifiedToken> => {
         | { id: string; scope: ApiTokenScope; family_id: string; user_id: string; owner_id: string }
         | undefined;
     if (!row) {
+        // Only the start the settings page already shows, and the length (a
+        // real token has ${API_TOKEN_LENGTH}), so that a program sending the wrong
+        // or a cut token can be told apart from a revoked one. Never the secret.
+        logger.warn('auth.api_token_unknown', {
+            prefix: apiTokenPrefix(token), length: token.length, expectedLength: API_TOKEN_LENGTH,
+        });
         throw new InvalidTokenError('Invalid token');
     }
     if (row.owner_id !== row.family_id) {
@@ -93,6 +101,13 @@ const verifyApiToken = async (token: string): Promise<VerifiedToken> => {
  */
 export const verifyAccessToken = async (token: string): Promise<VerifiedToken> => {
     if (isApiToken(token)) return verifyApiToken(token);
+    if (token.split('.').length !== 3) {
+        // Neither an API token nor a session: typically a mangled copy-paste
+        // (a masked value, a token missing its ofk_ start). Expired sessions
+        // are not logged here, they are routine.
+        logger.warn('auth.token_unrecognized', { length: token.length });
+        throw new InvalidTokenError('Invalid token');
+    }
 
     let claims: TokenClaims;
     try {

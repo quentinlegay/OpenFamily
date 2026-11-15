@@ -38,10 +38,16 @@ export interface GeneratedApiToken {
     prefix: string;
 }
 
+/** How a token starts, as the settings page lists it: never enough to use it. */
+export const apiTokenPrefix = (token: string): string => token.slice(0, API_TOKEN_PREFIX.length + 8);
+
+/** ofk_ plus 32 random bytes in base64url. */
+export const API_TOKEN_LENGTH = API_TOKEN_PREFIX.length + 43;
+
 /** 256 random bits behind the prefix. */
 export const generateApiToken = (): GeneratedApiToken => {
     const token = API_TOKEN_PREFIX + crypto.randomBytes(32).toString('base64url');
-    return { token, hash: hashApiToken(token), prefix: token.slice(0, API_TOKEN_PREFIX.length + 8) };
+    return { token, hash: hashApiToken(token), prefix: apiTokenPrefix(token) };
 };
 
 // Routes an API token may never use, whatever its scope: they manage the
