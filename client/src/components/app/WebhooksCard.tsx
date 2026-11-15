@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, Copy, Send, Trash2, Webhook as WebhookIcon } from 'lucide-react';
 import { Card, CardContent, Button, Input, Badge } from '../ui';
 import { api, ApiError } from '../../lib/api';
+import { copyText } from '../../lib/clipboard';
 import { formatDateTime } from '../../i18n/format';
 
 interface Webhook {
@@ -144,12 +145,8 @@ const WebhooksCard: React.FC = () => {
 
     const copy = async () => {
         if (!fresh) return;
-        try {
-            await navigator.clipboard.writeText(fresh.secret);
-            setCopied(true);
-        } catch {
-            // No clipboard here (plain http, some web views): the field can still be selected by hand.
-        }
+        // The field stays selectable by hand if the browser refuses both ways.
+        setCopied(await copyText(fresh.secret));
     };
 
     const outcome = (hook: Webhook): string => {

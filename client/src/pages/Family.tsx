@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
+import { copyText } from '../lib/clipboard';
 import { Plus, Edit2, Trash2, User, Phone, Heart, AlertTriangle, Users, Link2, Copy, LogOut, Crown, UserX, Check, UserPlus, Send, Clock, X } from 'lucide-react';
 import { Card, CardContent, Button, Dialog, Input, Select, Textarea, Badge } from '../components/ui';
 import { DEFAULT_FAMILY_COLOR, FAMILY_COLOR_PRESETS } from '../design/colorPresets';
@@ -244,12 +245,10 @@ const Family: React.FC = () => {
         }
     };
 
-    const handleCopyInvite = () => {
-        if (!inviteLink) return;
-        navigator.clipboard.writeText(inviteLink).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
+    const handleCopyInvite = async () => {
+        if (!inviteLink || !(await copyText(inviteLink))) return;
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     const handleChangeMemberRole = async (userId: string, role: 'parent' | 'enfant') => {
@@ -791,7 +790,7 @@ const Family: React.FC = () => {
                                                 className="flex-1 bg-transparent text-body-sm text-foreground outline-none truncate"
                                             />
                                             <button
-                                                onClick={handleCopyInvite}
+                                                onClick={() => void handleCopyInvite()}
                                                 className="shrink-0 p-1 rounded hover:bg-nexus-blue/10 transition-colors"
                                                 title={t('family:invite.copyTitle')}
                                             >

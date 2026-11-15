@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, Copy, ExternalLink, Tablet, Trash2 } from 'lucide-react';
 import { Card, CardContent, Button, Input } from '../ui';
 import { api, ApiError } from '../../lib/api';
+import { copyText } from '../../lib/clipboard';
 import { apiBase } from '../../lib/serverConfig';
 import { formatDateTime, intlLocale } from '../../i18n/format';
 
@@ -74,13 +75,10 @@ const DisplayLinksCard: React.FC = () => {
     };
 
     const copy = async (link: DisplayLink) => {
-        try {
-            await navigator.clipboard.writeText(addressOf(link));
-            setCopiedId(link.id);
-            window.setTimeout(() => setCopiedId((current) => (current === link.id ? null : current)), 2000);
-        } catch {
-            // No clipboard here (plain http, some web views): the field can still be selected by hand.
-        }
+        // The field stays selectable by hand if the browser refuses both ways.
+        if (!(await copyText(addressOf(link)))) return;
+        setCopiedId(link.id);
+        window.setTimeout(() => setCopiedId((current) => (current === link.id ? null : current)), 2000);
     };
 
     return (

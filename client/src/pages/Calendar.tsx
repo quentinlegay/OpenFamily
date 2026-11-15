@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { api } from '../lib/api';
+import { copyText } from '../lib/clipboard';
 import { apiBase } from '../lib/serverConfig';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Edit2, Trash2, MapPin, Clock, CalendarPlus, Copy, Check, RefreshCw, Search, X } from 'lucide-react';
 import { Card, CardContent, Button, Dialog, Input, Textarea, Badge, Select, DatePicker } from '../components/ui';
@@ -299,13 +300,9 @@ const Calendar: React.FC = () => {
     };
 
     const copyFeedUrl = async () => {
-        try {
-            await navigator.clipboard.writeText(feedUrl);
-            setFeedCopied(true);
-            setTimeout(() => setFeedCopied(false), 2000);
-        } catch {
-            /* clipboard unavailable */
-        }
+        if (!(await copyText(feedUrl))) return;
+        setFeedCopied(true);
+        setTimeout(() => setFeedCopied(false), 2000);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

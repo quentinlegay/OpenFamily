@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, Copy, KeyRound, Trash2 } from 'lucide-react';
 import { Card, CardContent, Button, Input, Select, Badge } from '../ui';
 import { api, ApiError } from '../../lib/api';
+import { copyText } from '../../lib/clipboard';
 import { formatDateTime } from '../../i18n/format';
 
 type Scope = 'read' | 'write';
@@ -77,12 +78,8 @@ const ApiTokensCard: React.FC = () => {
 
     const copy = async () => {
         if (!fresh) return;
-        try {
-            await navigator.clipboard.writeText(fresh.token);
-            setCopied(true);
-        } catch {
-            // No clipboard here (plain http, some web views): the field can still be selected by hand.
-        }
+        // The field stays selectable by hand if the browser refuses both ways.
+        setCopied(await copyText(fresh.token));
     };
 
     const scopeLabel = (value: Scope) => (value === 'write' ? t('apiTokens.scopeWrite') : t('apiTokens.scopeRead'));
